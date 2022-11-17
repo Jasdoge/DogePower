@@ -38,7 +38,12 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
                         last_power_supply.last_device_amount += wallet_amount
                         last_power_supply.paid = True
                         last_power_supply.save()
-                return Response(serializer.data)
+                sec_left = last_power_supply.payment_expires - timezone.now() if last_power_supply and last_power_supply.payment_expires > timezone.now() else None
+                return Response({
+                    'data': serializer.data,
+                    'payment_expires': last_power_supply.payment_expires.timestamp() if last_power_supply and last_power_supply.payment_expires else timezone.now().timestamp(),
+                    'seconds_left': sec_left.seconds if last_power_supply and last_power_supply.payment_expires > timezone.now() else 0
+                })
             except PowerSupply.DoesNotExist:
                 Response({'error': 'address not found'})
         else:
