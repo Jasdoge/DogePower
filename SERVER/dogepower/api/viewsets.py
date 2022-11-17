@@ -40,6 +40,7 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
                         last_power_supply.save()
                 return Response({
                     'data': serializer.data,
+                    'payment_expires': last_power_supply.payment_expires.timestamp(),
                     'seconds_left': last_power_supply.payment_expires - timezone.now() if last_power_supply and last_power_supply.payment_expires > timezone.now() else 0
                 })
             except PowerSupply.DoesNotExist:
