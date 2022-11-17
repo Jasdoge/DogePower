@@ -2,7 +2,7 @@
 
 namespace Config{
 	
-	char addr[35] = "";
+	char addr[36] = "2NCYsUzVmNBKJZAdZjeGdj2iu2ufhreZ34b";
 
 	void saveConfig(){
 

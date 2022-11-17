@@ -13,7 +13,7 @@ namespace Config{
 	const uint8_t PIN_RELAY = 16;
 	const uint8_t PIN_CONFIG = 26;
 
-	extern char addr[35];
+	extern char addr[36];
 
 	void setup();
 	void loop();

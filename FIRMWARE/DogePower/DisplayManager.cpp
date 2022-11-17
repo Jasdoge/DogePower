@@ -1,4 +1,5 @@
 #include "DisplayManager.h"
+#include "qrcoderm.h"
 
 namespace DisplayManager{
 
@@ -9,6 +10,7 @@ namespace DisplayManager{
 	File pngfile;
 	int16_t xpos = 0;
 	int16_t ypos = 0;
+	uint32_t ticker = 0;
 	
 	TFT_eSprite *toDraw;	// Sprite to draw to in callback
 
@@ -86,6 +88,7 @@ namespace DisplayManager{
 		Serial.println(ESP.getFreeHeap());
 	}
 
+
 	void setPage( uint8_t p, uint8_t force ){
 		
 		if( p == page && !force )
@@ -95,15 +98,27 @@ namespace DisplayManager{
 		tft.fillScreen(TFT_BLACK);
 		if( p == PAGE_RUNTIME ){
 
-			//drawPNG("/badge_bg.png", 0, 0);
-			tft.setTextColor(TFT_WHITE, TFT_BLUE);
-			tft.setTextDatum(MC_DATUM);
-			tft.drawString("Default Page",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,2);
+			const uint32_t expiry = DpWiFi::chargeExpires();
+			// QR
+			if( !expiry ){
+				drawPNG("/payment_screen.png", 0, 0);
+				drawQrCode( Config::addr, 102, 62, 0, 4 );
+
+				tft.setTextColor(TEXT_COLOR);
+				tft.setTextDatum(MC_DATUM);
+				char out[9];
+				itoa(DpWiFi::COST_PER_HOUR, out, 10);
+				tft.drawString(out,SCREEN_WIDTH/2,206,2);
+
+			}
+			// Clock
+			else{
+				drawPNG("/socket_active.png", 0, 0);
+			}
 			
 		}
 		else if( p == PAGE_BOOT ){
 
-			//drawPNG("/badge_bg.png", 0, 0);
 			tft.setTextColor(TFT_WHITE);
 			tft.setTextDatum(MC_DATUM);
 			tft.drawString("Booting",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,2);
@@ -111,7 +126,6 @@ namespace DisplayManager{
 		}
 		else if( p == PAGE_WIFI ){
 
-			//drawPNG("/badge_bg.png", 0, 0);
 			tft.setTextColor(TFT_WHITE);
 			tft.setTextDatum(MC_DATUM);
 			tft.drawString("WiFi Screen",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,2);
@@ -119,7 +133,6 @@ namespace DisplayManager{
 		}else if( p == PAGE_ERROR ){
 
 			tft.fillScreen(TFT_RED);
-			//drawPNG("/badge_bg.png", 0, 0);
 			tft.setTextColor(TFT_WHITE);
 			tft.setTextDatum(MC_DATUM);
 			tft.drawString("WiFi Screen",SCREEN_WIDTH/2,SCREEN_HEIGHT/2,2);
@@ -129,10 +142,41 @@ namespace DisplayManager{
 
 	}
 
+	void drawQrCode( char *address, const uint16_t xPos, const uint16_t yPos, const uint16_t color, const uint8_t w ){
+
+		const uint8_t blocks = 29;	// 29 squares in each direction
+		const uint8_t buffer = 3;
+
+		QRCode qrcode;
+		uint8_t qrcodeBytes[qrcode_getBufferSize(buffer)];
+
+		// Todo: build address
+		char full[42];
+		strcpy(full, "doge:");
+		strcat(full, address);
+
+		qrcode_initText(&qrcode, qrcodeBytes, buffer, ECC_MEDIUM, full);
+		for( uint8_t y = 0; y < qrcode.size; ++y ){
+
+			const uint16_t startY = yPos+w*y;
+
+			for( uint8_t x = 0; x < qrcode.size; ++x ){
+
+				const uint16_t startX = xPos+w*x;
+
+				if( qrcode_getModule(&qrcode, x, y) )
+					tft.fillRect(startX, startY, w, w, color);
+
+			}
+
+		}
+
+	}
+
 	void setup(){
 
 		tft.init();
-		tft.setRotation(2);
+		tft.setRotation(1);
 		tft.setTextDatum(MC_DATUM);
 		
 		setPage(PAGE_BOOT, true);
@@ -150,10 +194,20 @@ namespace DisplayManager{
 
 	void loop(){
 
-		uint32_t ms = millis();
+		const uint32_t ms = millis();
+
+		if( ms-ticker < 1000 )
+			return;
+		ticker = ms;
 
 		if( page == PAGE_RUNTIME ){
-			// Todo: Handle screensaver
+			
+			if( DpWiFi::chargeExpires() ){
+				
+				// Todo: Update clock.
+				
+			}
+
 		}
 
 	}

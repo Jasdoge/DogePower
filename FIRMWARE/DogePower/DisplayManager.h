@@ -7,6 +7,9 @@
 #include <TFT_eSPI.h>
 #include <LittleFS.h>
 #include <PNGdec.h>
+#include "DpWiFi.h"
+
+
 
 namespace DisplayManager{
 
@@ -17,8 +20,12 @@ namespace DisplayManager{
 		const uint8_t PAGE_ERROR = 4;
 	extern uint8_t subPage;
 
-	const uint16_t SCREEN_WIDTH = 240;
-	const uint16_t SCREEN_HEIGHT = 320;
+	const uint16_t SCREEN_WIDTH = 320;
+	const uint16_t SCREEN_HEIGHT = 240;
+
+	const uint16_t TEXT_COLOR = 0xB4E6;
+
+	extern uint32_t ticker;
 
 	extern TFT_eSPI tft;
 	/*
@@ -44,6 +51,8 @@ namespace DisplayManager{
 	int32_t pngSeek(PNGFILE *page, int32_t position);
 	void pngDrawToScreen( PNGDRAW *pDraw );
 	void pngDrawToSprite( PNGDRAW *pDraw );
+
+	void drawQrCode( char *address, const uint16_t xPos, const uint16_t yPos, const uint16_t color = 0, const uint8_t w = 7 );
 
 	void setup();
 	void loop();
