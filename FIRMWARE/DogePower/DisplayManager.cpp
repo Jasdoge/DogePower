@@ -150,12 +150,7 @@ namespace DisplayManager{
 		QRCode qrcode;
 		uint8_t qrcodeBytes[qrcode_getBufferSize(buffer)];
 
-		// Todo: build address
-		char full[42];
-		strcpy(full, "doge:");
-		strcat(full, address);
-
-		qrcode_initText(&qrcode, qrcodeBytes, buffer, ECC_MEDIUM, full);
+		qrcode_initText(&qrcode, qrcodeBytes, buffer, ECC_MEDIUM, address);
 		for( uint8_t y = 0; y < qrcode.size; ++y ){
 
 			const uint16_t startY = yPos+w*y;
@@ -204,7 +199,11 @@ namespace DisplayManager{
 			
 			if( DpWiFi::chargeExpires() ){
 				
-				// Todo: Update clock.
+				//uint32_t hours = 
+
+				tft.setTextColor(TEXT_COLOR, TFT_WHITE);
+				tft.setTextDatum(MC_DATUM);
+				tft.drawString("1h",SCREEN_WIDTH/2,121,2);
 				
 			}
 

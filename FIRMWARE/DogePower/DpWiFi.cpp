@@ -12,7 +12,7 @@ namespace DpWiFi{
 
 	uint32_t expiry_start = 0;		// When the last expiry update took place
 	uint32_t expiry_dur = 0;		// Duration of expiry
-	uint16_t COST_PER_HOUR = 25;	// Todo: Needs to be initialized by API
+	uint16_t COST_PER_HOUR = 60;	// Todo: Needs to be initialized by API
 
 	// Returns time until expiry in whole seconds
 	uint32_t chargeExpires(){
@@ -81,10 +81,46 @@ namespace DpWiFi{
 			
 		}
 
-		if( con && ms-last_read > READ_DLY ){
+		if( con && (ms-last_read > READ_DLY || !last_read) ){
 			last_read = ms;
 
-			Serial.println("Todo: Read from API");
+			char fullURL[128];
+			strcpy(fullURL, endpoint);
+			strcat(fullURL, Config::addr);
+			strcat(fullURL, "/");
+
+			Serial.printf("Sending HTTP request to %S \n", fullURL);
+
+			HTTPClient http;
+			http.begin(fullURL);
+			//http.begin("http://jsonplaceholder.typicode.com/todos/1");
+			int httpCode = http.GET();
+			Serial.printf("Got response code %i\n");
+			if( httpCode > 0 ){
+
+				StaticJsonDocument<2048> doc;
+				String response = http.getString();
+				Serial.println("HTTP Response: ");
+				Serial.println(response.c_str());
+				DeserializationError error = deserializeJson(doc, response);
+				if( error ){
+					Serial.print(F("deserializeJson() failed: "));
+    				Serial.println(error.f_str());
+					return;
+				}
+				uint32_t expiry = doc["seconds_left"];
+
+				if( expiry && !expiry_start ){
+
+					expiry_start = ms;
+					expiry_dur = expiry*1000;
+					DisplayManager::setPage(DisplayManager::PAGE_RUNTIME, true);
+					Relay::toggle(true);
+
+				}
+				Serial.printf("Got expiry %i \n", expiry);
+
+			}
 
 		}
 
