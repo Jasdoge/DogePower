@@ -38,7 +38,7 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
                         last_power_supply.last_device_amount += wallet_amount
                         last_power_supply.paid = True
                         last_power_supply.save()
-                sec_left = last_power_supply.payment_expires - timezone.now()
+                sec_left = last_power_supply.payment_expires - timezone.now() if last_power_supply and last_power_supply.payment_expires > timezone.now() else None
                 return Response({
                     'data': serializer.data,
                     'payment_expires': last_power_supply.payment_expires.timestamp() if last_power_supply and last_power_supply.payment_expires else timezone.now().timestamp(),
