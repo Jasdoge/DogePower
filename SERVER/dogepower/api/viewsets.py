@@ -40,7 +40,7 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
                         last_power_supply.save()
                 return Response({
                     'data': serializer.data,
-                    'seconds_left': last_power_supply.payment_expires - timezone.now() if last_power_supply.payment_expires > timezone.now() else 0
+                    'seconds_left': last_power_supply.payment_expires - timezone.now() if last_power_supply and last_power_supply.payment_expires > timezone.now() else 0
                 })
             except PowerSupply.DoesNotExist:
                 Response({'error': 'address not found'})
