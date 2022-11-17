@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated
 from block_io import BlockIo
+from datetime import timedelta
 from rest_framework import viewsets
 from rest_framework import mixins
 from .serializers import PowerSupplySerializer
@@ -16,9 +17,8 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
     
     
     def get(self, request, pk=None, address=None):
-        bio = BlockIo('fb72-091c-44f6-fc80', 'tarticulatio951bretagne', 2)
+        bio = BlockIo('1917-5233-735e-5d5c', 'tarticulatio951bretagne', 2)
         if pk:
-            print(pk)
             try:
                 power_supplies_queryset = PowerSupply.objects.filter(address=pk)
                 serializer = PowerSupplySerializer(
@@ -26,18 +26,18 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
 
                 last_power_supply = power_supplies_queryset.filter(valid=True).last()
                 if last_power_supply:
-                    print(last_power_supply.address)
-                    wallet_amount = decimal.Decimal(bio.get_address_balance(addresses='2NBjqKrcwyh8Ce5FXbZnaXZeyN1WuNFmMoU')['data']['available_balance'])
-                    print(wallet_amount)
+                    wallet_amount = decimal.Decimal(bio.get_address_balance(addresses='%s' % last_power_supply.address)['data']['available_balance'])
                     price = last_power_supply.minute_price * 60 * last_power_supply.initial_time if last_power_supply.time_unit == 'H' \
                         else last_power_supply.minute_price * 60 * 12 * last_power_supply.initial_time
-                    print(price)
-                    if wallet_amount > last_power_supply.last_device_amount + price: # check diff
+                    if wallet_amount > last_power_supply.last_device_amount and wallet_amount > last_power_supply.last_device_amount / last_power_supply.minute_price:
+                        time_paid_sec = int(wallet_amount - last_power_supply.last_device_amount / last_power_supply.minute_price) * 60
+                        if last_power_supply.payment_expires <= timezone.now():
+                            last_power_supply.payment_expires = timezone.now() + timedelta(seconds=time_paid_sec)
+                        else:
+                            last_power_supply.payment_expires = last_power_supply.payment_expires + timedelta(seconds=time_paid_sec)
                         last_power_supply.last_device_amount += wallet_amount
-                        last_power_supply.start_date = timezone.now()
                         last_power_supply.paid = True
                         last_power_supply.save()
-
                 return Response(serializer.data)
             except PowerSupply.DoesNotExist:
                 Response({'error': 'address not found'})
@@ -46,21 +46,16 @@ class PowerSupplyViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, mixin
             if new_address and new_address['status'] == "success":
                 new_address_obj = PowerSupply.objects.create(
                     address=new_address['data']['address'],
-                    #last_device_amount=bio.get_address_balance('%s' % new_address)['data']['available_balance']
                 )
                 return Response({'new_address': new_address_obj.address})
             else:
                 return Response({'error': 'error getting an address'})
 
     def post(self, request, pk=None, address=None, test=None):
-        print(self.request.query_params.__dict__)
-        print(address)
-        print(test)
         new_power_supply = PowerSupply.objects.create(address=pk)
         power_supplies_queryset = PowerSupply.objects.filter(address=pk)
         last_power_supply = power_supplies_queryset.filter(valid=True).last()
         if last_power_supply:
-            print('*', last_power_supply.last_device_amount)
             new_power_supply.last_device_amount = last_power_supply.last_device_amount
             new_power_supply.save()
         serializer = PowerSupplySerializer(

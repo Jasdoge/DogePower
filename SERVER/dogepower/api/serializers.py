@@ -5,6 +5,6 @@ class PowerSupplySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PowerSupply
-        fields = ['address', 'time_unit', 'initial_time', 'start_time','minute_price', 'valid', 'paid', 'last_device_amount']
+        fields = ['address', 'payment_expires']
         
         
