@@ -3,11 +3,26 @@
 
 /*
 	Todo: Detect if we lose connection, and show disconnected error page
+	Todo: Needs to detect when charging starts/ends and toggle the display/relay accordingly
 */
 
 namespace DpWiFi{
 	uint32_t last_read = 0;
 	bool connected = false;	// internal
+
+	uint32_t expiry_start = 0;		// When the last expiry update took place
+	uint32_t expiry_dur = 0;		// Duration of expiry
+	uint16_t COST_PER_HOUR = 25;	// Todo: Needs to be initialized by API
+
+	// Returns time until expiry in whole seconds
+	uint32_t chargeExpires(){
+
+		const uint32_t ms = millis();
+		if( !expiry_start || ms-expiry_start > expiry_dur )
+			return 0;
+		return (expiry_dur-(ms-expiry_start))/1000;
+
+	}
 
 	// Check if config button is pressed
 	void check(){
@@ -55,7 +70,7 @@ namespace DpWiFi{
 		
 		check();
 		
-
+		const uint32_t ms = millis();
 		const bool con = isConnected();
 		// Connection status changed
 		if( con != connected ){
@@ -66,7 +81,14 @@ namespace DpWiFi{
 			
 		}
 
+		if( con && ms-last_read > READ_DLY ){
+			last_read = ms;
+
+			Serial.println("Todo: Read from API");
+
+		}
 
 	}
+
 }
 
